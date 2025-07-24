@@ -18,7 +18,7 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
-#include "devices/timer.h" 
+#include "devices/timer.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -196,33 +196,53 @@ int process_exec(void *f_name)
 	/* We first kill the current context */
 	process_cleanup();
 
-	/*	여기서 파싱 */
+
+		/*
+
+	여기서 파싱
+	*/
+
 	char *argv[64];
 	int argc = 0;
 	char *save_ptr;
 	char *token;
-	char *agv_addr[64];
-	
 	token = strtok_r(file_name, " ", &save_ptr);
-	for(;token !=NULL; token = strtok_r(NULL, " ", &save_ptr)){
-    	argv[argc++] = token; 
+	/* And then load the binary */
+
+	success = load(token, &_if);
+
+
+	for (; token != NULL; token = strtok_r(NULL, " ", &save_ptr))
+	{
+		argv[argc++] = token;
 	}
-	argc--;
 
 	_if.rsp = USER_STACK;
-	// _if.rsp = USER_STACK;
-	char *old_sp = (void *)_if.rsp;
-	for(int i = argc; i > 0; i++){
-		int len =(strlen(argv[i])+1);
-		_if.rsp  -= len;
-		memcpy((void*)_if.rsp, argv[i],len);
-		agv_addr[i] = (void*)_if.rsp;
+	char *arg_addr[64];
+
+	// 인자 문자열을 스택에 복사
+	for (int i = argc - 1; i >= 0; i--)
+	{
+		int len = strlen(argv[i]) + 1;
+		_if.rsp -= len;
+		memcpy((void *)_if.rsp, argv[i], len);
+		arg_addr[i] = (char *)_if.rsp; //문자열 가리키는 포인터
 	}
-	_if.rsp -= (((uintptr_t)old_sp - _if.rsp) + 8)/8;
+	 uint8_t padding = 8- ((USER_STACK - _if.rsp) % 8);
+	_if.rsp -= padding;
+	
+	_if.rsp -=sizeof(void*);
 
+	for(int i = argc-1; i >=0; i-- ){
+		int len =sizeof(void*);
+		_if.rsp -= len;
+		//memcpy((void*)_if.rsp, arg_addr[i],len);
+		memcpy((void*)_if.rsp, &arg_addr[i],len);
+	}
+	_if.rsp -= sizeof(void*);
+	memset((void *)_if.rsp,0,sizeof(void*));
 
-		/* And then load the binary */
-		success = load(file_name, &_if);
+	hex_dump(_if.rsp,_if.rsp,USER_STACK-_if.rsp,1);
 
 	/* If load failed, quit. */
 	palloc_free_page(file_name);
