@@ -11,7 +11,11 @@
 #include "threads/loader.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-
+/**
+ * @file palloc.c
+ * @brief 페이지 단위의 물리 메모리 할당을 관리하는 커널 메모리 할당기.
+ *        커널용/유저용 풀로 나누어 관리하며, 비트맵 기반으로 페이지를 추적함.
+ */
 /* Page allocator.  Hands out memory in page-size (or
    page-multiple) chunks.  See malloc.h for an allocator that
    hands out smaller chunks.
@@ -26,7 +30,10 @@
    half to the user pool.  That should be huge overkill for the
    kernel pool, but that's just fine for demonstration purposes. */
 
-/* A memory pool. */
+/**
+ * @struct pool
+ * @brief 메모리 풀을 나타내는 구조체. 물리 메모리 블록과 비트맵으로 구성됨.
+ */
 struct pool {
 	struct lock lock;               /* Mutual exclusion. */
 	struct bitmap *used_map;        /* Bitmap of free pages. */
@@ -34,7 +41,12 @@ struct pool {
 };
 
 /* Two pools: one for kernel data, one for user pages. */
-static struct pool kernel_pool, user_pool;
+/**
+ * @brief 페이지 할당기 초기화. 전체 메모리 맵을 분석하여 커널/유저 풀을 나눔.
+ * 
+ * @return uint64_t 할당 가능한 메모리의 최종 범위 (최상단 주소)
+ */
+static struct pool kernel_pool, user_pool; //0724 설명
 
 /* Maximum number of pages to put in user pool. */
 size_t user_page_limit = SIZE_MAX;
@@ -44,6 +56,10 @@ init_pool (struct pool *p, void **bm_base, uint64_t start, uint64_t end);
 static bool page_from_pool (const struct pool *, void *page);
 
 /* multiboot info */
+/**
+ * @struct multiboot_info
+ * @brief 부트로더에서 전달되는 메모리 정보(e820 등 포함)
+ */
 struct multiboot_info {
 	uint32_t flags;
 	uint32_t mem_low;
@@ -54,6 +70,10 @@ struct multiboot_info {
 };
 
 /* e820 entry */
+/**
+ * @struct e820_entry
+ * @brief 메모리 타입과 범위를 정의한 e820 항목
+ */
 struct e820_entry {
 	uint32_t size;
 	uint32_t mem_lo;
@@ -64,6 +84,10 @@ struct e820_entry {
 };
 
 /* Represent the range information of the ext_mem/base_mem */
+/**
+ * @struct area
+ * @brief 사용 가능한 메모리 영역의 범위 정보
+ */
 struct area {
 	uint64_t start;
 	uint64_t end;
@@ -259,6 +283,20 @@ palloc_init (void) {
    then the pages are filled with zeros.  If too few pages are
    available, returns a null pointer, unless PAL_ASSERT is set in
    FLAGS, in which case the kernel panics. */
+
+
+/**
+ * @brief 물리 메모리 풀에서 연속된 페이지 여러 개를 할당함.
+ *
+ * @param flags PAL_USER, PAL_ZERO, PAL_ASSERT 플래그 조합
+ * @param page_cnt 요청할 페이지 수
+ * @return void* 할당된 커널 가상주소. 실패 시 NULL 또는 panic.
+ * @see https://www.notion.so/palloc_get_multiple-2392b1e955c6807b868ded54eae7fc08?source=copy_link
+ * @note
+ * - PAL_USER: 유저 풀에서 할당
+ * - PAL_ZERO: 메모리 0으로 초기화
+ * - PAL_ASSERT: 실패 시 panic 발생
+ */
 void *
 palloc_get_multiple (enum palloc_flags flags, size_t page_cnt) {
 	struct pool *pool = flags & PAL_USER ? &user_pool : &kernel_pool;
@@ -291,12 +329,25 @@ palloc_get_multiple (enum palloc_flags flags, size_t page_cnt) {
    then the page is filled with zeros.  If no pages are
    available, returns a null pointer, unless PAL_ASSERT is set in
    FLAGS, in which case the kernel panics. */
+
+/**
+ * @brief palloc_get_multiple()의 래퍼로, 단일 페이지 할당
+ *
+ * @param flags PAL_* 플래그
+ * @return void* 커널 가상주소
+ */
 void *
 palloc_get_page (enum palloc_flags flags) {
 	return palloc_get_multiple (flags, 1);
 }
 
 /* Frees the PAGE_CNT pages starting at PAGES. */
+/**
+ * @brief 연속된 페이지들을 해제하고 다시 풀에 반환함.
+ *
+ * @param pages 반환할 시작 주소
+ * @param page_cnt 해제할 페이지 수
+ */
 void
 palloc_free_multiple (void *pages, size_t page_cnt) {
 	struct pool *pool;
@@ -323,12 +374,25 @@ palloc_free_multiple (void *pages, size_t page_cnt) {
 }
 
 /* Frees the page at PAGE. */
+/**
+ * @brief 단일 페이지를 해제함.
+ *
+ * @param page 해제할 페이지 주소
+ */
 void
 palloc_free_page (void *page) {
 	palloc_free_multiple (page, 1);
 }
 
 /* Initializes pool P as starting at START and ending at END */
+/**
+ * @brief 메모리 풀을 초기화하고, 비트맵 및 풀 정보 세팅
+ *
+ * @param p 초기화할 풀 구조체 포인터
+ * @param bm_base 비트맵 저장을 위한 메모리 시작 주소
+ * @param start 물리 메모리 시작 주소
+ * @param end 물리 메모리 끝 주소
+ */
 static void
 init_pool (struct pool *p, void **bm_base, uint64_t start, uint64_t end) {
   /* We'll put the pool's used_map at its base.
@@ -347,8 +411,14 @@ init_pool (struct pool *p, void **bm_base, uint64_t start, uint64_t end) {
 	*bm_base += bm_pages;
 }
 
-/* Returns true if PAGE was allocated from POOL,
-   false otherwise. */
+/**
+ * @brief 주어진 페이지가 특정 풀에서 왔는지 확인
+ *
+ * @param pool 검사할 풀
+ * @param page 검사할 페이지 주소
+ * @return true 해당 풀에서 할당된 페이지
+ * @return false 아님
+ */
 static bool
 page_from_pool (const struct pool *pool, void *page) {
 	size_t page_no = pg_no (page);
