@@ -7,6 +7,9 @@
 #include "userprog/gdt.h"
 #include "threads/flags.h"
 #include "intrinsic.h"
+#include "filesys/filesys.h"
+#include "filesys/file.h"
+
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -40,6 +43,14 @@ syscall_init (void) {
 /* The main system call interface */
 void
 syscall_handler (struct intr_frame *f UNUSED) {
+	int sysno = f->R.rax;
+	if(sysno == SYS_WRITE){
+		if(f->R.rdi == 1){
+			putbuf(f->R.rsi,f->R.rdx);
+		}
+		
+	}
+
 	// TODO: Your implementation goes here.
 	printf ("system call!\n");
 	thread_exit ();
