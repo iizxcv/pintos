@@ -9,6 +9,7 @@
         "loader.h": "c",
         "interrupt.h": "c",
         "syscall.h": "c",
-        "string": "c"
+        "string": "c",
+        "atomic": "c"
     }
 }

@@ -43,15 +43,31 @@ syscall_init (void) {
 /* The main system call interface */
 void
 syscall_handler (struct intr_frame *f UNUSED) {
+
 	int sysno = f->R.rax;
+
+
+	if(sysno == SYS_EXIT){
+
+		struct thread* cur_t = thread_current();
+		printf ("%s: exit(%d)\n", cur_t->name,f->R.rdi);
+		thread_exit();
+	}
+
+
 	if(sysno == SYS_WRITE){
-		if(f->R.rdi == 1){
-			putbuf(f->R.rsi,f->R.rdx);
-		}
+		write_h(f->R.rdi,f->R.rsi,f->R.rdx);
 		
 	}
 
 	// TODO: Your implementation goes here.
 	printf ("system call!\n");
 	thread_exit ();
+}
+
+void write_h(int fd, char* buffer, int size){
+
+			if( fd == 1){
+			putbuf(buffer,size);
+		}
 }

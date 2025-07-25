@@ -18,7 +18,7 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
-#include "devices/timer.h" 
+#include "devices/timer.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -202,34 +202,54 @@ int process_exec(void *f_name)
 	char *save_ptr;
 	char *token;
 	char *agv_addr[64];
-	
-	token = strtok_r(file_name, " ", &save_ptr);
-	for(;token !=NULL; token = strtok_r(NULL, " ", &save_ptr)){
-    	argv[argc++] = token; 
-	}
-	argc--;
+	uint8_t sentinel_size = sizeof(void *);
 
-	_if.rsp = USER_STACK;
+	/* And then load the binary */
+	token = strtok_r(f_name, " ", &save_ptr);
+	for (; token != NULL; token = strtok_r(NULL, " ", &save_ptr))
+	{
+		argv[argc++] = token;
+	}
+
+	success = load(file_name, &_if);
+
+	// _if.rsp = USER_STACK;
 	// _if.rsp = USER_STACK;
 	char *old_sp = (void *)_if.rsp;
-	for(int i = argc; i > 0; i++){
-		int len =(strlen(argv[i])+1);
-		_if.rsp  -= len;
-		memcpy((void*)_if.rsp, argv[i],len);
-		agv_addr[i] = (void*)_if.rsp;
+	for (int i = argc-1; i >= 0; i--)
+	{
+		int len = (strlen(argv[i]) + 1);
+		_if.rsp -= len;
+		memcpy((void *)_if.rsp, argv[i], len);
+		agv_addr[i] = (void *)_if.rsp;
 	}
-	_if.rsp -= (((uintptr_t)old_sp - _if.rsp) + 8)/8;
+	uint8_t padding_size = 8 -( (((uintptr_t)old_sp - _if.rsp) + 8) / 8);
+	_if.rsp -= padding_size;
+	memset((void *)_if.rsp, 0, padding_size);
+	_if.rsp -= sentinel_size;
+	memset((void *)_if.rsp, 0, sentinel_size);
 
+	for (int i = argc-1; i >= 0; i--)
+	{
+		_if.rsp -= sentinel_size;
+		memcpy((void *)_if.rsp, &agv_addr[i], sentinel_size);
+	}
 
-		/* And then load the binary */
-		success = load(file_name, &_if);
+	_if.rsp -= sentinel_size;
+	memset((void *)_if.rsp, 0, sentinel_size);
+
+	
 
 	/* If load failed, quit. */
 	palloc_free_page(file_name);
 	if (!success)
 		return -1;
-
+	hex_dump(_if.rsp,_if.rsp,USER_STACK-_if.rsp,1);
 	/* Start switched process. */
+
+	_if.R.rdi = argc;
+	_if.R.rsi = (void *)_if.rsp;
+
 	do_iret(&_if);
 	NOT_REACHED();
 }
@@ -250,10 +270,7 @@ int process_wait(tid_t child_tid UNUSED)
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
 	// for(;;)
-	// timer_sleep(400);
-	while (1)
-	{
-	}
+	timer_sleep(400);
 	return -1;
 }
 
