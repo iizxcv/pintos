@@ -51,9 +51,7 @@ tid_t process_create_initd(const char *file_name)
 	if (fn_copy == NULL)
 		return TID_ERROR;
 	strlcpy(fn_copy, file_name, PGSIZE);
-
-	//================================================여기서 쓰레드네임
-
+	
 	// char *name = strtok_r (*argv, "=", &save_ptr);
 	char *save_ptr;
 	char *token;
@@ -61,8 +59,6 @@ tid_t process_create_initd(const char *file_name)
 
 	token = strtok_r(file_name, " ", &save_ptr);
 	file_name = token;
-
-	//================================================여기서 쓰레드네임
 
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create(file_name, PRI_DEFAULT, initd, fn_copy);
@@ -164,8 +160,11 @@ __do_fork(void *aux)
 
 	/* TODO: Your code goes here.
 	 * TODO: Hint) To duplicate the file object, use `file_duplicate`
+
 	 * TODO:       in include/filesys/file.h. Note that parent should not return
+	
 	 * TODO:       from the fork() until this function successfully duplicates
+	
 	 * TODO:       the resources of parent.*/
 
 	process_init();
@@ -244,7 +243,7 @@ int process_exec(void *f_name)
 	palloc_free_page(file_name);
 	if (!success)
 		return -1;
-	hex_dump(_if.rsp,_if.rsp,USER_STACK-_if.rsp,1);
+	// hex_dump(_if.rsp,_if.rsp,USER_STACK-_if.rsp,1);
 	/* Start switched process. */
 
 	_if.R.rdi = argc;

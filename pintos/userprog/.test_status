@@ -1,3 +1,4 @@
 args-multiple FAIL
+read-normal FAIL
 args-none FAIL
 args-single FAIL
