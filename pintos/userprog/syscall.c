@@ -1,4 +1,4 @@
-#include "userprog/syscall.h"
+#include "userprog/syscall.h"static 
 #include <stdio.h>
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
@@ -12,6 +12,7 @@
 #include "userprog/process.h"
 #include "user/syscall.h"
 #include "threads/vaddr.h" // 필요 시 유효 주소 검증에 사용
+#include "custom_File.h"
 
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
@@ -23,8 +24,11 @@ int write_h(int fd, const char *buffer, unsigned size);
 int fork_h(const char *thread_name, struct intr_frame *f);
 int exec_h(const char *cmd_line);
 int wait_h(pid_t pid);
+int read_h(int fd, void *buffer, unsigned size);
+static void close_h(int fd);
+static int filesize_h(int fd);
 
-void syscall_handler(struct intr_frame *f)
+static void syscall_handler(struct intr_frame *f)
 {
 	int syscall_num = f->R.rax;
 
@@ -72,34 +76,33 @@ void syscall_handler(struct intr_frame *f)
 	}
 }
 
-void halt_h(void)
+static void halt_h(void)
 {
 	power_off(); // pintos 기본 함수
 }
 
-void exit_h(int status)
+static void exit_h(int status)
 {
 	struct thread *cur = thread_current();
 	printf("%s: exit(%d)\n", cur->name, status);
 	thread_exit(); // 실제로 종료 처리
 }
 
-int write_h(int fd, const char *buffer, unsigned size)
+static int write_h(int fd, const char *buffer, unsigned size)
 {
-	if (fd == 1)
-	{
-		putbuf(buffer, size);
-		return size;
-	}
-	return -1; // fd != 1은 아직 미구현
+	struct thread *cur_t = thread_current();
+	struct File * f = cur_t->fdt[fd];
+	if (buffer == NULL){return -1;} 
+	return File_write(fd, buffer,size);
+
 }
 
-int fork_h(const char *thread_name, struct intr_frame *f)
+static int fork_h(const char *thread_name, struct intr_frame *f)
 {
 	return process_fork(thread_name, f); // pintos 기본 제공
 }
 
-int exec_h(const char *cmd_line)
+static int exec_h(const char *cmd_line)
 {
 	if (cmd_line == NULL)
 		return -1;
@@ -113,39 +116,41 @@ int wait_h(pid_t pid)
 
 /* Read system call */
 int read_h(int fd, void *buffer, unsigned size) {
-	int w_size = 0;
-	if (fd == 0) {
-		char *buf = (char *)buffer;
+	struct thread *cur_t = thread_current();
+	if (buffer == NULL){return -1;} 
+	return File_read(cur_t->fdt[fd],buffer,size);
 
-		for (int i = 0; i < size; i++){
-			char key = input_getc();
-			buf[i] = key;
-			w_size++;
-		}
-			buf[w_size++] = '\0';
-
-		// 표준 입력(stdin)
-		// 키보드 입력은 실제 구현시 input_getc() 등을 반복 호출
-		// 여기선 간단히 비워둠
-		// ex: ((char *)buffer)[i] = input_getc();
-		return w_size; // 임시로 0 바이트 읽었다고 가정
-	}
-	// 파일에서 읽는 경우: file descriptor lookup → file_read()
-	return -1; // 아직 미구현
 }
 
 /* Open system call */
-int open_h(const char *file) {
-	if (file == NULL)
-		return -1;
+static int open_h(const char *file) {
 
-	// filesys_open(file) → struct file*
-	// open file list에 추가하고 fd 할당 필요
-	return -1; // 미구현
+	struct thread *cur_t = thread_current();
+	struct File * f = File_open(file);
+	if(f == NULL){return -1;}
+	cur_t->fdt[cur_t->fdt_cur_cnt] = f;
+	return cur_t->fdt_cur_cnt++; 
 }
 
 /* Close system call */
-void close_h(int fd) {
+static void close_h(int fd) {
+	struct thread *cur_t = thread_current();
+	if(cur_t->fdt[fd] == NULL){return exit(-1);}
+	struct File *f =cur_t->fdt[fd];
+	File_close(f);
+
+	// fd로 열린 파일 찾아서 file_close()
+	// 열린 파일 테이블에서 제거
+}
+
+/* filesize system call */
+static int filesize_h(int fd) {
+	struct thread *cur_t = thread_current();
+	if(cur_t->fdt[fd] == NULL){return;}
+	struct File *f =cur_t->fdt[fd];
+	
+	return File_length(f);
+	// file_length
 	// fd로 열린 파일 찾아서 file_close()
 	// 열린 파일 테이블에서 제거
 }

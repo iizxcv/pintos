@@ -13,6 +13,8 @@
 #include "intrinsic.h"
 #ifdef USERPROG
 #include "userprog/process.h"
+#include "custom_File.h"
+#include "malloc.h"
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -115,6 +117,9 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
+
+
+	
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -203,7 +208,12 @@ thread_create (const char *name, int priority,
 	t->tf.ss = SEL_KDSEG;
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
-
+	
+	t->fdt = palloc_get_page(PAL_ASSERT|PAL_ZERO|PAL_USER);
+	t->fdt[0] = File_open_stdin();
+	t->fdt[1] = File_open_stdout();
+	t->fdt_cur_cnt = 2;
+	
 	/* Add to run queue. */
 	thread_unblock (t);
 

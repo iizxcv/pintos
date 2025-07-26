@@ -12,6 +12,22 @@
         "string": "c",
         "atomic": "c",
         "thread.h": "c",
-        "vaddr.h": "c"
-    }
+        "vaddr.h": "c",
+        "file.h": "c",
+        "debug.h": "c",
+        "custom_file.h": "c",
+        "string.h": "c",
+        "array": "c",
+        "vector": "c",
+        "string_view": "c",
+        "functional": "c",
+        "limits": "c",
+        "ostream": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "palloc.h": "c",
+        "cstdlib": "c",
+        "memory": "c"
+    },
+    "claudeCodeChat.permissions.yoloMode": false
 }
