@@ -1,0 +1,20 @@
+# 빌드 파일
+*.o
+*.out
+*.bin
+*.dsk
+
+
+# 로그 파일
+*.log
+
+# 임시 파일
+*.tmp
+*~
+
+# 디렉토리 무시
+/build/
+/node_modules/
+
+/특정 파일 무시
+secret.txt
