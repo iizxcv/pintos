@@ -12,6 +12,7 @@
         "string": "c",
         "atomic": "c",
         "thread.h": "c",
-        "vaddr.h": "c"
+        "vaddr.h": "c",
+        "synch.h": "c"
     }
 }
