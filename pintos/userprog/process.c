@@ -29,6 +29,12 @@ static bool load(const char *file_name, struct intr_frame *if_);
 static void initd(void *f_name);
 static void __do_fork(void *);
 
+struct fork_data
+{
+	struct intr_frame *_if;
+	struct thread *t;
+};
+
 /* General process initializer for initd and other process.
 initd 및 기타 프로세스를 위한 일반 프로세스 초기화 함수입니다.*/
 static void
@@ -197,8 +203,13 @@ initd(void *f_name)
 tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 {
 	/* Clone current thread to new thread.*/
-	return thread_create(name,
-						 PRI_DEFAULT, __do_fork, thread_current());
+	struct fork_data *f_data = malloc(sizeof(struct fork_data));
+	f_data->_if = if_;
+	f_data->t = thread_current();
+	tid_t result =thread_create(name,
+						 PRI_DEFAULT, __do_fork, f_data);
+	wait(result);
+	return result;
 }
 
 #ifndef VM
@@ -218,14 +229,29 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
 	/* 1. TODO: parent_page가 커널 페이지라면 즉시 반환합니다. */
 
+	if (!is_user_vaddr(va)) // 1.투두
+	{
+		return true;
+	}
+
 	/* 2. Resolve VA from the parent's page map level 4. */
 	/* 2. 부모의 pml4에서 VA를 해석합니다. */
-
-	parent_page = pml4_get_page(parent->pml4, va);
+	if ((parent_page = pml4_get_page(parent->pml4, va)) == NULL)
+	{
+		return false;
+	}
 
 	/* 3. TODO: Allocate new PAL_USER page for the child and set result to
 	 *    TODO: NEWPAGE. */
 	/* 3. TODO: 자식 프로세스를 위해 PAL_USER 페이지를 새로 할당하고, 결과를 NEWPAGE에 저장합니다. */
+
+	if ((newpage = palloc_get_page(PAL_ASSERT |PAL_USER)) == NULL)
+	{
+		return false;
+	}
+	memcpy(newpage, parent_page, PGSIZE);
+
+	writable = is_writable(pte);
 
 	/* 4. TODO: Duplicate parent's page to the new page and
 	 *    TODO: check whether parent's page is writable or not (set WRITABLE
@@ -241,6 +267,7 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 	{
 		/* 6. TODO: if fail to insert page, do error handling. */
 		/* 6. TODO: 페이지 삽입에 실패하면 에러 처리를 합니다. */
+		return false;
 	}
 	return true;
 }
@@ -257,11 +284,12 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 static void
 __do_fork(void *aux)
 {
+	struct fork_data *f_data = (struct fork_data *)aux;
 	struct intr_frame if_;
-	struct thread *parent = (struct thread *)aux;
+	struct thread *parent = f_data->t;
 	struct thread *current = thread_current();
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
-	struct intr_frame *parent_if;
+	struct intr_frame *parent_if = f_data->_if;
 	bool succ = true;
 
 	/* 1. Read the cpu context to local stack. */
@@ -289,6 +317,11 @@ __do_fork(void *aux)
 	 * TODO:       the resources of parent.*/
 
 	process_init();
+	// struct fd_table* cur_fdt = current->fd_table;
+	// for(int i = 2; parent->fd_table->fd_node[i].file != NULL; i++){
+	// 	cur_fdt->fd_node[i] = parent->fd_table->fd_node[i];
+	// }
+	// 나중에 해도된다고 하네?
 
 	/* Finally, switch to the newly created process. */
 	if (succ)
@@ -345,7 +378,7 @@ TID가 유효하지 않거나, 호출한 프로세스의 자식이 아니거나,
 기다리지 않고 즉시 -1을 반환합니다.
 이 함수는 문제 2-2에서 구현될 예정입니다.
 현재는 아무 동작도 하지 않습니다.*/
-int process_wait(tid_t child_tid UNUSED)
+int process_wait(tid_t child_tid)
 {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
@@ -362,24 +395,24 @@ int process_wait(tid_t child_tid UNUSED)
 	// sema_down(&child_t->goreajang);
 	// return 0;
 	struct list_elem *elem = list_begin(&main_t->process_child_list);
-	if (child_t = list_entry(elem, struct thread, process_cur_elem) != NULL)
+	if (child_t = list_entry(elem, struct thread, elem) != NULL)
 	{
 		for (;
 			 elem != list_end(&main_t->process_child_list);
 			 elem = list_next(elem))
 		{
-			child_t = list_entry(elem, struct thread, process_cur_elem);
+			child_t = list_entry(elem, struct thread, elem);
 			if (child_tid == child_t->tid)
-			{
-				sema_down(&child_t->goreajang);
+		{
+			sema_down(&child_t->goreajang);
 				return 0;
-			}
 		}
+	}
 	}
 	return -1;
 }
 
-// sema_down(&child_t->goreajang);
+
 
 /* XXX: 힌트) PintOS는 process_wait(initd)가 호출되면 종료됩니다.
  * XXX: process_wait를 구현하기 전에 이 부분에 무한 루프를 추가하는 것을 권장합니다. */
@@ -395,8 +428,15 @@ void process_exit(void)
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	sema_up(&curr->goreajang);
 
+	struct thread *parent_t = curr->process_parent_thread;
+	struct dying_msg *struct_dmsg = malloc(sizeof(struct dying_msg));
+	struct_dmsg->child_tid = curr->tid;
+	struct_dmsg->msg = curr->exit_status;
+
+	list_push_front(&parent_t->dmsg_elem_list, struct_dmsg);
+
+	sema_up(&curr->goreajang);
 	process_cleanup();
 }
 
@@ -417,16 +457,25 @@ process_cleanup(void)
 	if (pml4 != NULL)
 	{
 		/* Correct ordering here is crucial.  We must set
-		 * cur->pagedir to NULL before switching page directories,
-		 * so that a timer interrupt can't switch back to the
-		 * process page directory.  We must activate the base page
-		 * directory before destroying the process's page
-		 * directory, or our active page directory will be one
-		 * that's been freed (and cleared). */
+		  cur->pagedir to NULL before switching page directories,
+		 so that a timer interrupt can't switch back to the
+		 process page directory.  We must activate the base page
+		 directory before destroying the process's page
+		 directory, or our active page directory will be one
+		 that's been freed (and cleared). */
 		curr->pml4 = NULL;
 		pml4_activate(NULL);
 		pml4_destroy(pml4);
 	}
+
+	// for (int i = 0; i < 64; i++)
+	// {
+	// 	if (curr->fd_table->fd_node[i].type == FD_FILE)
+	// 	{
+	// 		file_close(curr->fd_table->fd_node[i].file);
+	// 	}
+	// }
+	// palloc_free_page(curr->fd_table);
 }
 
 /* Sets up the CPU for running user code in the nest thread.

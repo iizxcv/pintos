@@ -13,6 +13,9 @@
         "atomic": "c",
         "thread.h": "c",
         "vaddr.h": "c",
-        "synch.h": "c"
+        "synch.h": "c",
+        "stdbool.h": "c",
+        "type_traits": "c",
+        "main.h": "c"
     }
 }

@@ -137,7 +137,6 @@ void thread_init(void)
 	list_init(&sleep_list);
 	list_init(&destruction_req);
 
-
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
 	init_thread(initial_thread, "main", PRI_DEFAULT);
@@ -232,8 +231,11 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
-	list_push_back(&thread_current()->process_child_list, &t->process_cur_elem);
-	t->process_parent_elem = &thread_current()->process_cur_elem;
+	if (idle_thread != t)
+	{
+		list_push_back(&thread_current()->process_child_list, &t->elem);
+	}
+	t->process_parent_thread = thread_current();
 
 	/* Add to run queue. */
 	thread_unblock(t);
@@ -367,7 +369,7 @@ void thread_exit(void)
 
 #ifdef USERPROG
 	process_exit();
-	// pricess.c 안에서 모든 fd를 close 하고 이후에 palloc한거 제거하는거 구현
+	// process.c 안에서 모든 fd를 close 하고 이후에 palloc한거 제거하는거 구현
 #endif
 
 	/* Just set our status to dying and schedule another process.
@@ -505,6 +507,7 @@ kernel_thread(thread_func *function, void *aux)
 static void
 init_thread(struct thread *t, const char *name, int priority)
 {
+
 	ASSERT(t != NULL);
 	ASSERT(PRI_MIN <= priority && priority <= PRI_MAX);
 	ASSERT(name != NULL);
@@ -516,7 +519,10 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
 
-	
+	t->process_parent_thread = NULL;
+	t->exit_status = 0;
+
+	list_init(&t->dmsg_elem_list);
 	sema_init(&t->goreajang, 0);
 	list_init(&t->process_child_list);
 }

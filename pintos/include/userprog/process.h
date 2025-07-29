@@ -18,6 +18,12 @@ struct fd_table {
 	struct fd_value fd_node[64];
 };
 
+typedef struct dying_msg{
+	tid_t child_tid;
+	int msg;
+	struct list_elem elem;
+};
+
 int process_file_open (const char *file_name);
 int process_file_length (int fd);
 int process_file_read (int fd, const void *buffer, unsigned size);

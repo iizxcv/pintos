@@ -19,6 +19,8 @@ enum thread_status {
 	THREAD_DYING        /* About to be destroyed. */
 };
 
+
+
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
 typedef int tid_t;
@@ -28,6 +30,8 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
+
+
 
 /* A kernel thread or user process.
  *
@@ -102,10 +106,14 @@ struct thread {
 	uint64_t *pml4;                     /* Page map level 4 */
 	struct fd_table *fd_table;
 
-	struct list_elem* process_parent_elem;
+
+	struct thread* process_parent_thread;
 	struct list_elem process_cur_elem;
 	struct list process_child_list;
 	struct semaphore goreajang;
+	int exit_status;
+
+	struct list dmsg_elem_list;
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
