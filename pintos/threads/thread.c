@@ -239,6 +239,7 @@ tid_t thread_create(const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock(t);
+
 	thread_maybe_yield(); // 나보다 우선순위가 큰 스레드가 생성될 수 있으니까 체크
 
 	return tid;

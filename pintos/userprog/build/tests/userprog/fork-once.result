@@ -1,2 +1,2 @@
 FAIL
-Run didn't produce any output
+Run didn't shut down properly: no "Timer: # ticks" message

@@ -204,11 +204,14 @@ tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 {
 	/* Clone current thread to new thread.*/
 	struct fork_data *f_data = malloc(sizeof(struct fork_data));
-	f_data->_if = if_;
+	memcpy(f_data->_if, if_, sizeof(struct intr_frame));
 	f_data->t = thread_current();
 	tid_t result =thread_create(name,
 						 PRI_DEFAULT, __do_fork, f_data);
-	wait(result);
+	if(list_empty(&thread_current()->dmsg_elem_list)){
+		wait(result);
+	}
+						 
 	return result;
 }
 
@@ -245,7 +248,7 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 	 *    TODO: NEWPAGE. */
 	/* 3. TODO: 자식 프로세스를 위해 PAL_USER 페이지를 새로 할당하고, 결과를 NEWPAGE에 저장합니다. */
 
-	if ((newpage = palloc_get_page(PAL_ASSERT |PAL_USER)) == NULL)
+	if ((newpage = palloc_get_page(PAL_ASSERT | PAL_USER)) == NULL)
 	{
 		return false;
 	}
@@ -285,15 +288,17 @@ static void
 __do_fork(void *aux)
 {
 	struct fork_data *f_data = (struct fork_data *)aux;
-	struct intr_frame if_;
 	struct thread *parent = f_data->t;
 	struct thread *current = thread_current();
+	struct intr_frame if_ = parent->tf;
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
-	struct intr_frame *parent_if = f_data->_if;
+	struct intr_frame *child_if = &if_;
 	bool succ = true;
 
+	child_if->R.rax = 0;
+
 	/* 1. Read the cpu context to local stack. */
-	memcpy(&if_, parent_if, sizeof(struct intr_frame));
+	
 
 	/* 2. Duplicate PT */
 	current->pml4 = pml4_create();
@@ -325,7 +330,7 @@ __do_fork(void *aux)
 
 	/* Finally, switch to the newly created process. */
 	if (succ)
-		do_iret(&if_);
+		do_iret(&child_if);
 error:
 	thread_exit();
 }
