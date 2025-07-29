@@ -12,6 +12,15 @@
         "string": "c",
         "atomic": "c",
         "thread.h": "c",
-        "vaddr.h": "c"
+        "vaddr.h": "c",
+        "stdbool.h": "c",
+        "process.h": "c",
+        "cstdlib": "c",
+        "init.h": "c",
+        "stdio.h": "c",
+        "mmu.h": "c",
+        "hash.h": "c",
+        "palloc.h": "c",
+        "memory": "c"
     }
 }

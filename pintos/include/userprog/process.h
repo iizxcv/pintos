@@ -13,6 +13,13 @@ struct fd_value {
 	struct file *file;
 };
 
+struct dying_msg
+{
+	tid_t tid;
+	int dying_msg;
+	struct list_elem elem;
+};
+
 /* 프로세스마다 파일 디스크립터를 관리하기 위한 구조체 */
 struct fd_table {
 	struct fd_value fd_node[64];
@@ -29,5 +36,7 @@ int process_exec (void *f_name);
 int process_wait (tid_t);
 void process_exit (void);
 void process_activate (struct thread *next);
+
+struct dying_msg* dying_msg_init (tid_t tid );
 
 #endif /* userprog/process.h */

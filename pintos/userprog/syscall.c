@@ -1,15 +1,5 @@
 #include "userprog/syscall.h"
-#include <stdio.h>
-#include <syscall-nr.h>
-#include "threads/interrupt.h"
-#include "threads/thread.h"
-#include "threads/loader.h"
-#include "userprog/gdt.h"
-#include "threads/flags.h"
-#include "intrinsic.h"
-#include "filesys/file.h"
-#include "filesys/filesys.h"
-#include "userprog/process.h"
+
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -62,10 +52,12 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			sys_exit (f->R.rdi);
 			break;
 		case SYS_FORK:
+			f->R.rax = sys_fork(f->R.rdi,f);
 			break;
 		case SYS_EXEC:
 			break;
 		case SYS_WAIT:
+			f->R.rax = sys_wait(f->R.rdi);
 			break;
 		case SYS_CREATE:
 			f->R.rax = sys_create (f-> R.rdi, f -> R.rsi);
@@ -104,12 +96,20 @@ void
 sys_halt (void) {
 	power_off (); 
 }
-
+int sys_wait (tid_t tid){
+	process_wait(tid);
+}
 /* exit로 호출한 스레드를 종료하는 함수 */
 void
 sys_exit (int status) {
 	printf ("%s: exit(%d)\n", thread_name (), status);
+	thread_current()->dmsg->dying_msg = status;
 	thread_exit ();
+}
+
+tid_t sys_fork (const char *thread_name, struct intr_frame * _if){
+
+	return process_fork(thread_name, _if);
 }
 
 /* filesys_create를 호출하며 새로운 파일을 만듭니다. */

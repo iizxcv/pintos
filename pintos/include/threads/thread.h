@@ -5,9 +5,11 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/synch.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
+
 
 
 /* States in a thread's life cycle. */
@@ -100,6 +102,11 @@ struct thread {
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
 	struct fd_table *fd_table;
+	struct thread* parent;
+	struct semaphore self_jail;
+	struct list child_dying_list;
+	struct dying_msg* dmsg;
+
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */

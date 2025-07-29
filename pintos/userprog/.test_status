@@ -21,6 +21,7 @@ open-boundary PASS
 create-null PASS
 open-bad-ptr PASS
 write-normal PASS
+fork-once PASS
 write-boundary PASS
 close-bad-fd PASS
 exit PASS
