@@ -1,3 +1,4 @@
+fork-multiple PASS
 args-dbl-space PASS
 read-bad-fd PASS
 args-multiple PASS
@@ -5,6 +6,8 @@ create-normal PASS
 open-twice PASS
 read-bad-ptr PASS
 create-long PASS
+fork-close PASS
+fork-boundary PASS
 create-bound PASS
 read-normal PASS
 open-empty PASS
@@ -19,6 +22,7 @@ halt PASS
 write-bad-fd PASS
 open-boundary PASS
 create-null PASS
+fork-recursive PASS
 open-bad-ptr PASS
 write-normal PASS
 fork-once PASS
@@ -27,6 +31,7 @@ close-bad-fd PASS
 exit PASS
 write-bad-ptr PASS
 args-many PASS
+fork-read FAIL
 write-zero PASS
 create-exists PASS
 open-normal PASS

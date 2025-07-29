@@ -208,6 +208,7 @@ tid_t thread_create(const char *name, int priority,
 					thread_func *function, void *aux)
 {
 	struct thread *t;
+	struct thread * par_t = thread_current();
 	tid_t tid;
 
 	ASSERT(function != NULL);
@@ -235,9 +236,13 @@ tid_t thread_create(const char *name, int priority,
 	t->dmsg = malloc(sizeof(struct dying_msg));
 	t->dmsg->tid = t->tid;
 
+	t->parent = thread_current();
+	// list_push_back(&par_t->child_list, &t->elem);
 	/* Add to run queue. */
 	thread_unblock(t);
 	thread_maybe_yield(); // 나보다 우선순위가 큰 스레드가 생성될 수 있으니까 체크
+	
+	
 
 	return tid;
 }
@@ -366,7 +371,8 @@ void thread_exit(void)
 	ASSERT(!intr_context());
 
 #ifdef USERPROG
-	if(thread_current()->parent != NULL){process_exit();}
+	// if(thread_current()->parent != NULL){process_exit();}
+	process_exit();
 	
 	// pricess.c 안에서 모든 fd를 close 하고 이후에 palloc한거 제거하는거 구현
 #endif
@@ -520,8 +526,12 @@ init_thread(struct thread *t, const char *name, int priority)
 	#ifdef USERPROG
 	list_init(&t->child_dying_list);
 	list_init(&t->self_jail.waiters);
+	// list_init(&t->child_list);
 	sema_init(&t->self_jail,0);
+	
+
 	// t->dmsg = dying_msg_init(t->tid);
+	
 
 	#endif
 	

@@ -105,6 +105,7 @@ struct thread {
 	struct thread* parent;
 	struct semaphore self_jail;
 	struct list child_dying_list;
+	// struct list child_list;
 	struct dying_msg* dmsg;
 
 #endif

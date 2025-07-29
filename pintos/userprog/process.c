@@ -30,13 +30,11 @@ struct fork_data
 	struct thread *t;
 };
 
-
-
 static void process_cleanup(void);
 static bool load(const char *file_name, struct intr_frame *if_);
 static void initd(void *f_name);
 static void __do_fork(void *);
-
+static int find_dying_msg(tid_t child_tid);
 /* General process initializer for initd and other process.
 initd 및 기타 프로세스를 위한 일반 프로세스 초기화 함수입니다.*/
 static void
@@ -379,33 +377,25 @@ TID가 유효하지 않거나, 호출한 프로세스의 자식이 아니거나,
 현재는 아무 동작도 하지 않습니다.*/
 int process_wait(tid_t child_tid UNUSED)
 {
-	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
-	 * XXX:       to add infinite loop here before
-	 * XXX:       implementing the process_wait. */
 
 	/* XXX: 힌트) PintOS는 process_wait(initd)가 호출되면 종료됩니다.
 	 * XXX: process_wait를 구현하기 전에 이 부분에 무한 루프를 추가하는 것을 권장합니다. */
 	struct thread *curr = thread_current();
 	struct list_elem *elem;
-	if (!list_empty(&curr->child_dying_list))
-	{
-		for (elem = list_front(&curr->child_dying_list);
-			 elem != list_end(&curr->child_dying_list);
-			 elem = list_next(elem))
-		{
-			struct dying_msg *dmsg = list_entry(elem, struct dying_msg, elem);
-			if (dmsg->tid == child_tid)
-			{
-				int result = dmsg->dying_msg;
-				list_remove(elem);
-				free(dmsg);
-				return result;
-			}
-		}
-	}
+	int a = -1;
+	if(list_empty(&curr->child_dying_list))
+		sema_down(&curr->self_jail);
 
+		if ((a = find_dying_msg(child_tid)) != -1)
+		{
+			return a;
+		}
+
+
+
+	
 	//  while(true){}
-	timer_sleep(400);
+	// timer_sleep(400);
 	return -1;
 }
 
@@ -417,9 +407,9 @@ void process_exit(void)
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	
-	
+
 	list_push_back(&curr->parent->child_dying_list, &curr->dmsg->elem);
+	list_remove(&curr->elem);
 	sema_up(&curr->parent->self_jail);
 
 	process_cleanup();
@@ -908,3 +898,23 @@ setup_stack(struct intr_frame *if_)
 
 // 	return dmsg;
 // }
+
+static int find_dying_msg(tid_t child_tid)
+{
+	struct list_elem *elem;
+	struct thread *curr = thread_current();
+	for (elem = list_front(&curr->child_dying_list);
+		 elem != list_end(&curr->child_dying_list);
+		 elem = list_next(elem))
+	{
+		struct dying_msg *dmsg = list_entry(elem, struct dying_msg, elem);
+		if (dmsg->tid == child_tid)
+		{
+			int result = dmsg->dying_msg;
+			list_remove(elem);
+			free(dmsg);
+			return result;
+		}
+	}
+	return 0;
+}
