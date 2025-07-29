@@ -3,9 +3,7 @@
 *.out
 *.bin
 *.dsk
-*.output
 
-*.result
 
 # 로그 파일
 *.log
