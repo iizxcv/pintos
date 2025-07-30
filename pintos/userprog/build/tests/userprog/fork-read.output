@@ -11,7 +11,7 @@ Booting from Hard Disk..Kernel command line: -q -f put fork-read put sample.txt 
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0xffe0000 (Usable: 260,992 kB)
-Calibrating timer...  261,734,400 loops/s.
+Calibrating timer...  419,020,800 loops/s.
 hd0: unexpected interrupt
 hd0:0: detected 329 sector (164 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
@@ -22,4 +22,22 @@ Boot complete.
 Putting 'fork-read' into the file system...
 Putting 'sample.txt' into the file system...
 Executing 'fork-read':
-qemu-system-x86_64: QEMU: Terminated via GDBstub
+(fork-read) begin
+(fork-read) open "sample.txt"
+(fork-read) child run
+(fork-read) Child: pintos is funny!
+(fork-read) end
+child: exit(0)
+(fork-read) Parent success
+(fork-read) end
+fork-read: exit(0)
+Execution of 'fork-read' complete.
+Timer: 62 ticks
+Thread: 36 idle ticks, 26 kernel ticks, 0 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 124 reads, 294 writes
+hd1:0: 128 reads, 0 writes
+Console: 1100 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

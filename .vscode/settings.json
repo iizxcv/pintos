@@ -21,6 +21,7 @@
         "mmu.h": "c",
         "hash.h": "c",
         "palloc.h": "c",
-        "memory": "c"
+        "memory": "c",
+        "syscall-nr.h": "c"
     }
 }

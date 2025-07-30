@@ -1,6 +1,7 @@
 #include "userprog/syscall.h"
 
 
+
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 
@@ -102,17 +103,18 @@ int sys_wait (tid_t tid){
 }
 
 int sys_exec (const char *filename)
-{	check_address (filename);
-	char* filename_copy = palloc_get_page(0);
-	if(filename_copy == NULL)
-		exit(-1);
-	strlcpy(filename_copy,filename, PGSIZE);
-	
-	if(process_exec(filename_copy) == -1)
-		exit(-1);
-	
-	palloc_free_page(filename_copy);
-	
+{
+	check_address(filename);
+
+	char* fn_copy =palloc_get_page(PAL_ZERO);
+	if (fn_copy == NULL)
+		return TID_ERROR;
+	strlcpy(fn_copy, filename, PGSIZE);
+
+
+	if(process_exec(fn_copy) == -1)
+		return -1;
+
 }
 
 /* exit로 호출한 스레드를 종료하는 함수 */

@@ -1,4 +1,4 @@
-#ifdef USERPROG_SYSCALL_H
+#ifndef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
 
 #include <stdbool.h>

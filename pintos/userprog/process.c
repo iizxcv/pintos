@@ -543,6 +543,11 @@ load(const char *file_name, struct intr_frame *if_)
 	bool success = false;
 	int i;
 
+
+	/* 들어온 file_name 파싱 */
+	char *token, *save, *cmd_str[64];
+	int count = 0;
+	token = strtok_r(file_name, " ", &save);
 	/* Allocate and activate page directory. */
 	t->pml4 = pml4_create();
 	if (t->pml4 == NULL)
@@ -550,10 +555,10 @@ load(const char *file_name, struct intr_frame *if_)
 	process_activate(thread_current());
 
 	/* Open executable file. */
-	file = filesys_open(thread_name());
+	file = filesys_open(token);
 	if (file == NULL)
 	{
-		printf("load: %s: open failed\n", thread_name());
+		printf("load: %s: open failed\n", token);
 		goto done;
 	}
 
@@ -631,8 +636,6 @@ load(const char *file_name, struct intr_frame *if_)
 	if_->rip = ehdr.e_entry;
 
 	/* 들어온 file_name 파싱 */
-	char *token, *save, *cmd_str[64];
-	int count = 0;
 	token = strtok_r(file_name, " ", &save);
 	do
 	{

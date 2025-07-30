@@ -29,7 +29,7 @@ child: exit(81)
 fork-once: exit(0)
 Execution of 'fork-once' complete.
 Timer: 69 ticks
-Thread: 39 idle ticks, 27 kernel ticks, 3 user ticks
+Thread: 39 idle ticks, 26 kernel ticks, 4 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 85 reads, 268 writes
 hd1:0: 120 reads, 0 writes
