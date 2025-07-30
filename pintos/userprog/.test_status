@@ -31,7 +31,7 @@ close-bad-fd PASS
 exit PASS
 write-bad-ptr PASS
 args-many PASS
-fork-read FAIL
+fork-read PASS
 write-zero PASS
 create-exists PASS
 open-normal PASS

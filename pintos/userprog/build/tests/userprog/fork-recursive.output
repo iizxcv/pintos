@@ -5,7 +5,8 @@ iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+0138B4A0+012CB4A0 CA00
 Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
 
 
-Booting from Hard Disk..Kernel command line: -q -f put fork-recursive run fork-recursive
+Booting from Hard Disk...
+Kernel command line: -q -f put fork-recursive run fork-recursive
 0 ~ 9fc00 1
 100000 ~ 13e0000 1
 Pintos booting with: 
@@ -49,8 +50,8 @@ child: exit(4)
 (fork-recursive) end
 fork-recursive: exit(0)
 Execution of 'fork-recursive' complete.
-Timer: 84 ticks
-Thread: 32 idle ticks, 37 kernel ticks, 15 user ticks
+Timer: 92 ticks
+Thread: 32 idle ticks, 40 kernel ticks, 21 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 93 reads, 268 writes
 hd1:0: 120 reads, 0 writes
