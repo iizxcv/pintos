@@ -55,6 +55,7 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			f->R.rax = sys_fork(f->R.rdi,f);
 			break;
 		case SYS_EXEC:
+		 	f->R.rax = sys_exec(f->R.rdi);
 			break;
 		case SYS_WAIT:
 			f->R.rax = sys_wait(f->R.rdi);
@@ -99,6 +100,21 @@ sys_halt (void) {
 int sys_wait (tid_t tid){
 	process_wait(tid);
 }
+
+int sys_exec (const char *filename)
+{	check_address (filename);
+	char* filename_copy = palloc_get_page(0);
+	if(filename_copy == NULL)
+		exit(-1);
+	strlcpy(filename_copy,filename, PGSIZE);
+	
+	if(process_exec(filename_copy) == -1)
+		exit(-1);
+	
+	palloc_free_page(filename_copy);
+	
+}
+
 /* exit로 호출한 스레드를 종료하는 함수 */
 void
 sys_exit (int status) {

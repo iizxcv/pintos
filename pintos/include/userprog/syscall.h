@@ -1,4 +1,4 @@
-#ifndef USERPROG_SYSCALL_H
+#ifdef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
 
 #include <stdbool.h>
@@ -13,10 +13,11 @@
 #include "filesys/file.h"
 #include "filesys/filesys.h"
 #include "userprog/process.h"
+#include "threads/palloc.h"
 
 
 void syscall_init (void);
-
+int sys_exec (const char *filename);
 void sys_halt (void);
 void sys_exit (int status);
 int sys_wait (tid_t tid);

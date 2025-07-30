@@ -343,8 +343,8 @@ int process_exec(void *f_name)
 	bool success;
 
 	/* We cannot use the intr_frame in the thread structure.
-	 * This is because when current thread rescheduled,
-	 * it stores the execution information to the member. */
+	  This is because when current thread rescheduled,
+	 it stores the execution information to the member. */
 	struct intr_frame _if;
 	_if.ds = _if.es = _if.ss = SEL_UDSEG;
 	_if.cs = SEL_UCSEG;
@@ -364,6 +364,8 @@ int process_exec(void *f_name)
 	/* Start switched process. */
 	do_iret(&_if);
 	NOT_REACHED();
+
+	return 0;
 }
 
 /* Waits for thread TID to die and returns its exit status.  If

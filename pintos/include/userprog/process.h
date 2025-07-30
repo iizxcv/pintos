@@ -28,7 +28,7 @@ struct fd_table {
 };
 
 int process_file_open (const char *file_name);
-int process_file_length (int fd);
+int process_file_length (int fd);   
 int process_file_read (int fd, const void *buffer, unsigned size);
 int process_file_write (int fd, const void *buffer, unsigned size);
 void process_file_close (int fd);
