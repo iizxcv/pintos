@@ -352,7 +352,7 @@ int process_exec(void *f_name)
 
 	/* We first kill the current context */
 	process_cleanup();
-
+	
 	/* And then load the binary */
 	success = load(file_name, &_if);
 
@@ -558,6 +558,7 @@ load(const char *file_name, struct intr_frame *if_)
 	file = filesys_open(token);
 	if (file == NULL)
 	{
+		
 		printf("load: %s: open failed\n", token);
 		goto done;
 	}
@@ -566,7 +567,7 @@ load(const char *file_name, struct intr_frame *if_)
 	if (file_read(file, &ehdr, sizeof ehdr) != sizeof ehdr || memcmp(ehdr.e_ident, "\177ELF\2\1\1", 7) || ehdr.e_type != 2 || ehdr.e_machine != 0x3E // amd64
 		|| ehdr.e_version != 1 || ehdr.e_phentsize != sizeof(struct Phdr) || ehdr.e_phnum > 1024)
 	{
-		printf("load: %s: error loading executable\n", thread_name());
+		printf("load: %s: error loading executable\n", token);
 		goto done;
 	}
 
@@ -636,7 +637,6 @@ load(const char *file_name, struct intr_frame *if_)
 	if_->rip = ehdr.e_entry;
 
 	/* 들어온 file_name 파싱 */
-	token = strtok_r(file_name, " ", &save);
 	do
 	{
 		cmd_str[count++] = token;

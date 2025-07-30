@@ -1,9 +1,12 @@
+exec-bad-ptr PASS
 fork-multiple PASS
 args-dbl-space PASS
 read-bad-fd PASS
 args-multiple PASS
 create-normal PASS
 open-twice PASS
+exec-arg PASS
+exec-missing PASS
 read-bad-ptr PASS
 create-long PASS
 fork-close PASS
@@ -16,7 +19,9 @@ close-twice PASS
 args-none PASS
 create-bad-ptr PASS
 read-stdout PASS
+exec-read PASS
 read-boundary PASS
+exec-boundary PASS
 close-normal PASS
 halt PASS
 write-bad-fd PASS

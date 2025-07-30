@@ -6,6 +6,9 @@
 *.a
 *.so
 *.exe
+*.status
+*.output
+*.log
 
 # 빌드 디렉토리 (예: build/, bin/, obj/ 등)
 build/

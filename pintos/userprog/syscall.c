@@ -113,7 +113,7 @@ int sys_exec (const char *filename)
 
 
 	if(process_exec(fn_copy) == -1)
-		return -1;
+		sys_exit(-1);
 
 }
 
