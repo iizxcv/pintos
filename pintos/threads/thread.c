@@ -237,7 +237,7 @@ tid_t thread_create(const char *name, int priority,
 	t->dmsg->tid = t->tid;
 
 	t->parent = thread_current();
-	// list_push_back(&par_t->child_list, &t->elem);
+	list_push_back(&par_t->child_list, &t->sibling);
 	/* Add to run queue. */
 	thread_unblock(t);
 	thread_maybe_yield(); // 나보다 우선순위가 큰 스레드가 생성될 수 있으니까 체크
@@ -524,9 +524,9 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->magic = THREAD_MAGIC;
 
 	#ifdef USERPROG
-	list_init(&t->child_dying_list);
+	list_init(&t->child_dying_msg_list);
 	list_init(&t->self_jail.waiters);
-	// list_init(&t->child_list);
+	list_init(&t->child_list);
 	sema_init(&t->self_jail,0);
 	
 

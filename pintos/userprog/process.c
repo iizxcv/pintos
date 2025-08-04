@@ -319,8 +319,8 @@ __do_fork(void *aux)
 
 	process_init();
 	struct fd_table *fdt = current->fd_table;
-	for (int i = 2; 
-		parent->fd_table->fd_node[i].file != NULL ; i++)
+	for (int i = 2;
+		 parent->fd_table->fd_node[i].file != NULL; i++)
 	{
 		fdt->fd_node[i].file = file_duplicate(parent->fd_table->fd_node[i].file);
 		fdt->fd_node[i].type = parent->fd_table->fd_node[i].type;
@@ -352,7 +352,7 @@ int process_exec(void *f_name)
 
 	/* We first kill the current context */
 	process_cleanup();
-	
+
 	/* And then load the binary */
 	success = load(file_name, &_if);
 
@@ -393,17 +393,17 @@ int process_wait(tid_t child_tid UNUSED)
 	struct thread *curr = thread_current();
 	struct list_elem *elem;
 	int a = -1;
-	if (list_empty(&curr->child_dying_list))
-		sema_down(&curr->self_jail);
 
-	if ((a = find_dying_msg(child_tid)) != -1)
+	if (!list_empty(&curr->child_list))
 	{
-		return a;
-	}
+		if((a = find_dying_msg(child_tid)) == -1)
+			sema_down(&curr->self_jail);
 
+	}
+	a = find_dying_msg(child_tid);
 	//  while(true){}
 	// timer_sleep(400);
-	return -1;
+	return a;
 }
 
 /* Exit the process. This function is called by thread_exit (). */
@@ -415,8 +415,8 @@ void process_exit(void)
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
-	list_push_back(&curr->parent->child_dying_list, &curr->dmsg->elem);
-	list_remove(&curr->elem);
+	list_push_back(&curr->parent->child_dying_msg_list, &curr->dmsg->elem);
+	list_remove(&curr->sibling);
 	sema_up(&curr->parent->self_jail);
 
 	for (int fd = 0; curr->fd_table[fd].fd_node->file != NULL; fd++)
@@ -543,7 +543,6 @@ load(const char *file_name, struct intr_frame *if_)
 	bool success = false;
 	int i;
 
-
 	/* 들어온 file_name 파싱 */
 	char *token, *save, *cmd_str[64];
 	int count = 0;
@@ -558,7 +557,7 @@ load(const char *file_name, struct intr_frame *if_)
 	file = filesys_open(token);
 	if (file == NULL)
 	{
-		
+
 		printf("load: %s: open failed\n", token);
 		goto done;
 	}
@@ -919,8 +918,11 @@ static int find_dying_msg(tid_t child_tid)
 {
 	struct list_elem *elem;
 	struct thread *curr = thread_current();
-	for (elem = list_front(&curr->child_dying_list);
-		 elem != list_end(&curr->child_dying_list);
+
+	if (list_empty(&curr->child_dying_msg_list))
+		return -1;
+	for (elem = list_front(&curr->child_dying_msg_list);
+		 elem != list_end(&curr->child_dying_msg_list);
 		 elem = list_next(elem))
 	{
 		struct dying_msg *dmsg = list_entry(elem, struct dying_msg, elem);
@@ -932,5 +934,5 @@ static int find_dying_msg(tid_t child_tid)
 			return result;
 		}
 	}
-	return 0;
+	return -1;
 }

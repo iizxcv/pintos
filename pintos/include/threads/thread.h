@@ -104,8 +104,9 @@ struct thread {
 	struct fd_table *fd_table;
 	struct thread* parent;
 	struct semaphore self_jail;
-	struct list child_dying_list;
-	// struct list child_list;
+	struct list child_dying_msg_list;
+	struct list child_list;
+	struct list_elem sibling;
 	struct dying_msg* dmsg;
 
 #endif
