@@ -1,12 +1,6 @@
 #include "userprog/syscall.h"
-#include <stdio.h>
-#include <syscall-nr.h>
-#include "threads/interrupt.h"
-#include "threads/thread.h"
-#include "threads/loader.h"
-#include "userprog/gdt.h"
-#include "threads/flags.h"
-#include "intrinsic.h"
+
+
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -37,10 +31,136 @@ syscall_init (void) {
 			FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
 }
 
+/* 시스템 콜 인자로 전달된 유저 포인터가 가리키고 있는 주소가 유효 한지 확인합니다.
+	커널 주소 영역이거나 유저 페이지 테이블에 매핑 되지 않은 주소 라면 종료(exit(-1)) 시킵니다. */
+void
+check_address (void *addr) {
+	if (is_kernel_vaddr(addr) || pml4_get_page(thread_current()->pml4, addr) == 0) {
+		sys_exit (-1);
+	}
+}
+
 /* The main system call interface */
 void
 syscall_handler (struct intr_frame *f UNUSED) {
 	// TODO: Your implementation goes here.
-	printf ("system call!\n");
+	switch (f->R.rax)
+	{
+		case SYS_HALT:
+			sys_halt ();
+			break;
+		case SYS_EXIT:
+			sys_exit (f->R.rdi);
+			break;
+		case SYS_FORK:
+			f->R.rax = sys_fork(f->R.rdi,f);
+			break;
+		case SYS_EXEC:
+		 	f->R.rax = sys_exec(f->R.rdi);
+			break;
+		case SYS_WAIT:
+			f->R.rax = sys_wait(f->R.rdi);
+			break;
+		case SYS_CREATE:
+			f->R.rax = sys_create (f-> R.rdi, f -> R.rsi);
+			break;
+		case SYS_REMOVE:
+			break;
+		case SYS_OPEN:
+			f->R.rax = sys_open (f->R.rdi);
+			break;
+		case SYS_FILESIZE:
+			f->R.rax = sys_filesize (f->R.rdi);
+			break;
+		case SYS_READ:
+			f->R.rax = sys_read (f->R.rdi, f->R.rsi, f->R.rdx);
+			break;
+		case SYS_WRITE:
+			f->R.rax = sys_write (f->R.rdi, f->R.rsi, f->R.rdx);
+			break;
+		case SYS_SEEK:
+			break;
+		case SYS_TELL:
+			break;
+		case SYS_CLOSE:
+			sys_close(f->R.rdi);
+			break;
+		default:
+			printf ("system call exiting\n");
+			thread_exit ();
+			break;
+	}
+}
+
+/* power_off()를 호출하며 PintOS를 종료시킨다.
+	유저 프로그램에서 OS를 멈출 수 있는 유일한 시스템 콜 이다. */
+void
+sys_halt (void) {
+	power_off (); 
+}
+int sys_wait (tid_t tid){
+	process_wait(tid);
+}
+
+int sys_exec (const char *filename)
+{
+	check_address(filename);
+
+	char* fn_copy =palloc_get_page(PAL_ZERO);
+	if (fn_copy == NULL)
+		return TID_ERROR;
+	strlcpy(fn_copy, filename, PGSIZE);
+
+
+	if(process_exec(fn_copy) == -1)
+		sys_exit(-1);
+
+}
+
+/* exit로 호출한 스레드를 종료하는 함수 */
+void
+sys_exit (int status) {
+	printf ("%s: exit(%d)\n", thread_name (), status);
+	thread_current()->dmsg->dying_msg = status;
 	thread_exit ();
+}
+
+tid_t sys_fork (const char *thread_name, struct intr_frame * _if){
+
+	return process_fork(thread_name, _if);
+}
+
+/* filesys_create를 호출하며 새로운 파일을 만듭니다. */
+bool
+sys_create (const char *file, unsigned initial_size) {
+	check_address (file);
+	return filesys_create (file, initial_size);
+}
+
+int
+sys_open (const char *file) {
+	check_address (file);
+	return process_file_open (file);
+}
+
+int
+sys_filesize (int fd) {
+	return process_file_length (fd);
+}
+
+int
+sys_read (int fd, const void *buffer, unsigned size) {
+	check_address (buffer);
+	return process_file_read (fd, buffer, size);
+}
+
+int
+sys_write (int fd, const void *buffer, unsigned size) {
+	check_address (buffer);
+	return process_file_write (fd, buffer, size);
+}
+
+void 
+sys_close (int fd){
+	process_file_close (fd);
 }

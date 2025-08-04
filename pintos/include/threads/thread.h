@@ -5,9 +5,11 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/synch.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
+
 
 
 /* States in a thread's life cycle. */
@@ -89,6 +91,7 @@ struct thread {
 	/* Owned by thread.c. */
 	tid_t tid;                          /* Thread identifier. */
 	enum thread_status status;          /* Thread state. */
+	int64_t awake_ticks;
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
 
@@ -98,6 +101,14 @@ struct thread {
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
+	struct fd_table *fd_table;
+	struct thread* parent;
+	struct semaphore self_jail;
+	struct list child_dying_msg_list;
+	struct list child_list;
+	struct list_elem sibling;
+	struct dying_msg* dmsg;
+
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
@@ -125,6 +136,8 @@ tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
 void thread_block (void);
 void thread_unblock (struct thread *);
+void thread_sleep (int64_t alarm_ticks);
+void thread_wakeup (int64_t current_ticks);
 
 struct thread *thread_current (void);
 tid_t thread_tid (void);
@@ -132,6 +145,7 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
+void thread_maybe_yield (void);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
